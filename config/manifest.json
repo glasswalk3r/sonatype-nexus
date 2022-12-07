@@ -1,0 +1,22 @@
+[
+  {
+    "name": "nexus.service",
+    "to": "/etc/systemd/system"
+  },
+  {
+    "name": "pwquality.conf",
+    "to": "/etc/security"
+  },
+  {
+    "name": "network",
+    "to": "/etc/sysconfig"
+  },
+  {
+    "name": "system-auth",
+    "to": "/etc/pam.d"
+  },
+  {
+    "name": "password-auth",
+    "to": "/etc/pam.d"
+  }
+]

@@ -1,0 +1,21 @@
+---
+- name: Apply hardening configurations
+  hosts: all
+  become: 'yes'
+  tasks:
+    - name: Ensure IPV6 is disabled at sshd configuration
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^AddressFamily '
+        insertafter: '^#AddressFamily '
+        line: AddressFamily inet
+    - name: force X11Forwarding disable
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^X11Forwarding'
+        line: X11Forwarding no
+    - name: disable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: PermitRootLogin no

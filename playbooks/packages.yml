@@ -1,0 +1,52 @@
+---
+- name: manage RPM packages
+  hosts: all
+  become: true
+  tasks:
+    - name: upgrade all packages
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        update_cache: 'yes'
+    - name: ensure a list of packages is installed
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - java-1.8.0-openjdk
+          - net-tools
+          - git
+          - vim
+          - bind-utils
+          - wget
+          - mailx
+          - tree
+          - nc
+          - python3-libselinux
+          - cyrus-sasl-plain
+          - python3-pip
+          - langpacks-pt_BR.noarch  # locale, you might want to add/replace
+    - name: removed unused/unwanted software
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+        state: absent
+      vars:
+        packages:
+          - samba-common-libs
+          - gcc
+          - cpp
+          - qemu-guest-agent
+          - firewalld
+          - firewalld-filesystem
+          - python-firewall
+          - hyperv-daemons
+          - hyperv-daemons-license
+          - hypervfcopyd
+          - hypervkvpd
+          - hypervvssd
+          - NetworkManager
+          - NetworkManager-libnm
+          - NetworkManager-team
+          - NetworkManager-tui
+          - teamd
+          - kernel-devel
