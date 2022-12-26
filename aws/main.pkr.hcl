@@ -8,16 +8,6 @@ variable "aws_secret_key" {
   description = "The AWS secret key to be used for authentication"
 }
 
-variable "Environment" {
-  type        = string
-  description = "The name of the environment resources will be part of"
-}
-
-variable "Git_repository" {
-  type        = string
-  description = "The Git repository where this IaC is maintained"
-}
-
 variable "aws_region" {
   type        = string
   description = "The AWS region to associate the created resources"
@@ -58,6 +48,16 @@ variable "vpc" {
   description = "The VPC ID to use to launch the EC2 instance"
 }
 
+variable "tags" {
+  type = map(string)
+  description = "The tags to associate with resources"
+}
+
+variable "tag_prefix" {
+  type = string
+  description = "A prefix to add to all tags created"
+}
+
 locals {
   ami_name       = "Nexus-Intermediate-AWS-AMI-${timestamp()}"
   files_manifest = jsondecode(file("../config/manifest.json"))
@@ -77,14 +77,7 @@ source "amazon-ebs" "RockyLinux_AMI_Builder_-_Nexus" {
   ssh_keypair_name            = var.ssh_keypair_name
   ssh_username                = var.ssh_username
   subnet_id                   = var.subnet
-  tags = {
-    Created_by     = "packer"
-    Environment    = var.Environment
-    Git_repository = var.Git_repository
-    Name           = var.intermediate_nexus_ami
-    Owner          = var.Owner
-    Project_name   = var.Project_name
-  }
+  tags = merge(var.tags, {"${var.tag_prefix:createdBy}" = "packer"})
   vpc_id = var.vpc
 }
 
