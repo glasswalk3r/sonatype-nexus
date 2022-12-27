@@ -23,11 +23,6 @@ variable "intermediate_nexus_ami" {
   description = "The name to associate with the intermediate Nexus AMI"
 }
 
-variable "source_ami_id" {
-  type        = string
-  description = "The source AMI ID to be used"
-}
-
 variable "ssh_keypair_name" {
   type        = string
   description = "The SSH key pair to associate with EC2 instances"
@@ -49,21 +44,36 @@ variable "vpc" {
 }
 
 variable "tags" {
-  type = map(string)
+  type        = map(string)
   description = "The tags to associate with resources"
 }
 
 variable "tag_prefix" {
-  type = string
+  type        = string
   description = "A prefix to add to all tags created"
 }
 
 locals {
   ami_name       = "Nexus-Intermediate-AWS-AMI-${timestamp()}"
   files_manifest = jsondecode(file("../config/manifest.json"))
+  config_dir     = "../config"
 }
 
-source "amazon-ebs" "RockyLinux_AMI_Builder_-_Nexus" {
+data "amazon-ami" "rocky" {
+  most_recent = true
+  owners      = ["679593333241"]
+
+  filters = {
+    name                = "Rocky-8-ec2-202*-*-*.*.x86-64-.*"
+    root-device-type    = "ebs"
+    virtualization-type = "hvm"
+    state               = "available"
+    architecture        = "x86_64"
+  }
+
+}
+
+source "amazon-ebs" "RockyLinux_AMI_Builder_Nexus" {
   access_key      = var.aws_access_key
   ami_description = "Rocky Linux with Nexus OSS 3"
   # AMI names must be between 3 and 128 characters long, and may contain letters, numbers, '(', ')', ',', '.', '-', '/' and '_'
@@ -72,17 +82,17 @@ source "amazon-ebs" "RockyLinux_AMI_Builder_-_Nexus" {
   instance_type               = var.ec2_instance_type
   region                      = var.aws_region
   secret_key                  = var.aws_secret_key
-  source_ami                  = var.source_ami_id
+  source_ami                  = data.amazon-ami.rocky.id
   ssh_agent_auth              = true
   ssh_keypair_name            = var.ssh_keypair_name
   ssh_username                = var.ssh_username
   subnet_id                   = var.subnet
-  tags = merge(var.tags, {"${var.tag_prefix:createdBy}" = "packer"})
-  vpc_id = var.vpc
+  tags                        = merge(var.tags, { "${var.tag_prefix}:createdBy" = "packer" })
+  vpc_id                      = var.vpc
 }
 
 build {
-  sources = ["source.amazon-ebs.RockyLinux_AMI_Builder_-_Nexus"]
+  sources = ["source.amazon-ebs.RockyLinux_AMI_Builder_Nexus"]
 
   provisioner "shell" {
     inline = ["sudo dnf update -y", "sudo dnf install ansible awscli -y"]
@@ -97,10 +107,6 @@ build {
   }
 
   provisioner "ansible-local" {
-    playbook_file = "../playbooks/relay.yml"
-  }
-
-  provisioner "ansible-local" {
     playbook_file = "../playbooks/hardening.yml"
   }
 
@@ -109,40 +115,35 @@ build {
     destination = "/tmp/${local.files_manifest[0].name}"
     source      = "${local.config_dir}/${local.files_manifest[0].name}"
   }
-  provisioner "shell" {
-    inline = "sudo mv -v /tmp/${local.files_manifest[0].name} ${local.files_manifest[0].to}/"
-  }
 
   provisioner "file" {
     destination = "/tmp/${local.files_manifest[1].name}"
     source      = "${local.config_dir}/${local.files_manifest[1].name}"
-  }
-  provisioner "shell" {
-    inline = "sudo mv -v /tmp/${local.files_manifest[1].name} ${local.files_manifest[1].to}/"
   }
 
   provisioner "file" {
     destination = "/tmp/${local.files_manifest[2].name}"
     source      = "${local.config_dir}/${local.files_manifest[2].name}"
   }
-  provisioner "shell" {
-    inline = "sudo mv -v /tmp/${local.files_manifest[2].name} ${local.files_manifest[2].to}/"
-  }
 
   provisioner "file" {
     destination = "/tmp/${local.files_manifest[3].name}"
     source      = "${local.config_dir}/${local.files_manifest[3].name}"
-  }
-  provisioner "shell" {
-    inline = "sudo mv -v /tmp/${local.files_manifest[3].name} ${local.files_manifest[3].to}/"
   }
 
   provisioner "file" {
     destination = "/tmp/${local.files_manifest[4].name}"
     source      = "${local.config_dir}/${local.files_manifest[4].name}"
   }
+
   provisioner "shell" {
-    inline = "sudo mv -v /tmp/${local.files_manifest[4].name} ${local.files_manifest[4].to}/"
+    inline = [
+      "sudo mv -v /tmp/${local.files_manifest[4].name} ${local.files_manifest[4].to}/",
+      "sudo mv -v /tmp/${local.files_manifest[3].name} ${local.files_manifest[3].to}/",
+      "sudo mv -v /tmp/${local.files_manifest[2].name} ${local.files_manifest[2].to}/",
+      "sudo mv -v /tmp/${local.files_manifest[1].name} ${local.files_manifest[1].to}/",
+      "sudo mv -v /tmp/${local.files_manifest[0].name} ${local.files_manifest[0].to}/"
+    ]
   }
 
   provisioner "file" {
@@ -150,17 +151,9 @@ build {
     source      = "../scripts/basic.sh"
   }
 
-  provisioner "shell" {
-    inline = "sudo /tmp/basic.sh"
-  }
-
   provisioner "file" {
     destination = "/tmp/"
     source      = "../scripts/restore.sh"
-  }
-
-  provisioner "shell" {
-    inline = "sudo mv -v /tmp/restore.sh /usr/local/sbin/"
   }
 
   provisioner "file" {
@@ -169,7 +162,11 @@ build {
   }
 
   provisioner "shell" {
-    inline = "sudo mv -v /tmp/backup.sh /usr/local/sbin/"
+    inline = [
+      "sudo mv -v /tmp/backup.sh /usr/local/sbin/",
+      "sudo mv -v /tmp/restore.sh /usr/local/sbin/",
+      "sudo /tmp/basic.sh"
+    ]
   }
 
 }
