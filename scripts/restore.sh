@@ -7,7 +7,7 @@ set -e -o pipefail
 function validate_bucket() {
     local current_value=$1
 
-    if [ -z "$current_value" ]
+    if [[ -z "$current_value" ]]
     then
         usage
     fi
@@ -68,7 +68,7 @@ while getopts "b:h" option; do
 done
 
 function cleanup() {
-    if [ -d backup ]
+    if [[ -d backup ]]
     then
         rm -rf backup
     fi

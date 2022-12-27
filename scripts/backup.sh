@@ -5,7 +5,7 @@ set -eo pipefail
 function validate_bucket() {
     local current_value=$1
 
-    if [ -z "$current_value" ]
+    if [[ -z "$current_value" ]]
     then
         usage
     fi
