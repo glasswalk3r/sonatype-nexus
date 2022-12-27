@@ -18,7 +18,12 @@ output "vpc_id" {
   value       = module.search_vpc.vpc_id
 }
 
-output "s3_backup" {
+output "s3_backup_arn" {
   description = "The S3 bucket ARN used for Nexus's backups"
   value       = aws_s3_bucket.backup.arn
+}
+
+output "s3_backup_uri" {
+  description = "The S3 URI to access with awscli"
+  value       = "s3://${aws_s3_bucket.backup.bucket}"
 }
