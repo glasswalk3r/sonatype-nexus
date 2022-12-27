@@ -12,8 +12,7 @@ locals {
     "${var.tag_prefix}:Project"       = var.project
   }
   # always put the local.basic last to overwrite anything necessary
-  all     = merge(local.tags, local.basic)
-  content = jsonencode(local.all)
+  content = jsonencode(merge(local.tags, local.basic))
 }
 
 resource "local_file" "packer" {
@@ -62,13 +61,10 @@ resource "aws_security_group" "nexus" {
     cidr_blocks = ["0.0.0.0/0"]
     self        = true
   }
-  # overwritting the previous Name tag
-  tags = merge(local.tags, { Name = var.project })
 }
 
 resource "aws_s3_bucket" "backup" {
   bucket        = var.nexus_backup_bucket
-  tags          = local.tags
   force_destroy = false
 }
 
