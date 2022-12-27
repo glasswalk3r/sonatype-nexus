@@ -12,7 +12,10 @@ locals {
     "${var.tag_prefix}:Project"       = var.project
   }
   # always put the local.basic last to overwrite anything necessary
-  content = jsonencode(merge(local.tags, local.basic))
+  content               = jsonencode(merge(local.tags, local.basic))
+  # must be able to SSH into the EC2 during AMI creation
+  my_ip                 = data.http.my_ip_address.response_body
+  allowed_cidrs_for_ssh = concat(var.allowed_cidrs_for_ssh, [{ name = "", cidr = "${local.my_ip}/32" }])
 }
 
 resource "local_file" "packer" {

@@ -1,6 +1,13 @@
+variable "ip_check_website" {
+  type        = string
+  description = "The URL of an external website that answers HTTP GET with your current valid IP address. HTML responses won't be parsed!"
+  default     = "https://ifconfig.me"
+}
+
 variable "backup_expiration" {
   type        = number
   description = "The number days a backup file age is considered to expire and be removed"
+  default     = 60
 }
 
 variable "allowed_cidrs_for_ssh" {
